@@ -1,12 +1,14 @@
 package com.drondon.androidforbeginners0910_lecture13;
 
-import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+
+import java.io.File;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -24,28 +26,49 @@ public class MainActivity extends AppCompatActivity {
         buttonStart.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(MainActivity.this, MyService.class);
-                intent.setAction(MyService.ACTION_COUNTER);
-                intent.putExtra(MyService.EXTRA_KEY_COUNT, 250);
-                /*Context*/
-                Log.d(TAG, "before: ");
-                startService(intent);
-                Log.d(TAG, "after: ");
-                v.setEnabled(false);
-                updateUI();
+                MyDownloadTask task = new MyDownloadTask();
+                task.execute("http://mysite.com/logo.png");
             }
         });
     }
 
-    private void updateUI() {
-        counterTextView.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                counterTextView.setText("" + MyService.myCounter);
-                updateUI();
-            }
-        }, 500);
-    }
+    class MyDownloadTask extends AsyncTask<String, Integer, File> {
 
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            Log.d(TAG, "onPreExecute: " + Thread.currentThread().getName());
+            counterTextView.setText("Подготовка...");
+        }
+
+        @Override
+        protected File doInBackground(String... strings) {
+            Log.d(TAG, "doInBackground: " + Thread.currentThread().getName());
+            for (int i = 0; i < 100; i++) {
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                publishProgress(i);
+            }
+
+            return new File("/my_file.png");
+        }
+
+        @Override
+        protected void onProgressUpdate(Integer... values) {
+            super.onProgressUpdate(values);
+            Log.d(TAG, "onProgressUpdate: " + Thread.currentThread().getName());
+            counterTextView.setText("Загружено " + (values[0] + 1) + " %");
+        }
+
+        @Override
+        protected void onPostExecute(File file) {
+            super.onPostExecute(file);
+            Log.d(TAG, "onPostExecute: " + Thread.currentThread().getName());
+            counterTextView.setText("Готово!");
+        }
+    }
 
 }
